@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Space Shooter Game - Maza Double!</title>
+    <style>
+    
+      #ashwinName {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    color: white;
+    font-size: 20px;
+    font-weight: bold;
+    z-index: 3;
+    text-align: right;
+    text-shadow: 0 0 10px #00FFFF, 0 0 20px #00FFFF;
+}
+
+#ashwinTag {
+    position: absolute;
+    top: 50px;
+    right: 10px;
+    color: #FF69B4;
+    font-size: 18px;
+    font-weight: bold;
+    z-index: 3;
+    text-shadow: 0 0 8px #FF69B4, 0 0 14px #FF1493;
+}
+    
+    
+      body {
+            margin: 0;
+            overflow: hidden;
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Press Start 2P', cursive; /* Retro arcade font */
+        }
+
+        /* Import Google Font for a retro feel */
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+        #gameArea {
+            position: relative;
+            width: 400px;
+            height: 600px;
+            background: radial-gradient(ellipse at bottom, #1B2735 0%, #090A0F 100%);
+            overflow: hidden;
+            border: 3px solid #00FFFF; /* Thicker, glowing border */
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.9);
+            cursor: crosshair; /* Cool cursor */
+        }
+
+        #stars {
+            position: absolute;
+            width: 100%;
+            height: 200%; /* Double height for continuous scroll */
+            z-index: 0;
+            top: 0;
+            animation: starScroll 30s linear infinite; /* Slower, smoother scroll */
+        }
+
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle var(--duration) infinite ease-in-out;
+            opacity: 0.3;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        @keyframes starScroll {
+            from { transform: translateY(0); }
+            to { transform: translateY(-50%); } /* Scrolls half its height */
+        }
+
+        #player {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            /* More detailed player SVG */
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50"><path d="M25 0 L0 50 L25 40 L50 50 Z" fill="%2300FFFF"/><circle cx="25" cy="25" r="10" fill="%2300FF00" opacity="0.7"/><path d="M20 45 L30 45 L25 50 Z" fill="%23FF9900"/></svg>');
+            bottom: 20px;
+            left: 175px;
+            z-index: 2;
+            transition: left 0.08s ease-out; /* Smoother, slightly slower movement */
+            filter: drop-shadow(0 0 8px #00FFFF); /* Player glow */
+        }
+
+        .enemy {
+            position: absolute;
+            width: 45px; /* Slightly larger enemies */
+            height: 45px;
+            /* More aggressive enemy SVG */
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 45 45"><polygon points="22.5,0 0,45 45,45" fill="%23FF0000" transform="rotate(180 22.5 22.5)"/><circle cx="22.5" cy="22.5" r="8" fill="%23FF9900" opacity="0.8"/></svg>');
+            z-index: 2;
+            will-change: transform;
+            filter: drop-shadow(0 0 5px #FF0000); /* Enemy glow */
+        }
+
+        .bullet {
+            position: absolute;
+            width: 7px; /* Thicker bullets */
+            height: 20px; /* Longer bullets */
+            background: linear-gradient(to top, #FFFF00, #FFD700); /* Gradient bullet */
+            border-radius: 3px;
+            z-index: 2;
+            box-shadow: 0 0 10px #FFFF00, 0 0 20px rgba(255, 255, 0, 0.5); /* Stronger bullet glow */
+            will-change: transform;
+        }
+
+        /* Explosion effect */
+        .explosion {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background: radial-gradient(circle at center, rgba(255, 165, 0, 0.8) 0%, rgba(255, 0, 0, 0.6) 50%, transparent 100%);
+            border-radius: 50%;
+            animation: explode 0.3s forwards;
+            z-index: 3;
+        }
+
+        @keyframes explode {
+            0% { transform: scale(0); opacity: 1; }
+            100% { transform: scale(1.5); opacity: 0; }
+        }
+
+
+        #score {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            font-size: 28px; /* Even larger score */
+            z-index: 3;
+            text-shadow: 0 0 10px #00FFFF, 0 0 20px #00FFFF;
+            font-weight: bold;
+        }
+
+        #level {
+            position: absolute;
+            top: 50px; /* Below score */
+            left: 10px;
+            color: #00FF00;
+            font-size: 20px;
+            z-index: 3;
+            text-shadow: 0 0 8px #00FF00;
+            font-weight: bold;
+        }
+
+        #gameOver {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: red;
+            font-size: 56px; /* Huge Game Over */
+            font-weight: bold;
+            display: none;
+            z-index: 4; /* Higher z-index */
+            text-shadow: 0 0 20px #FF0000, 0 0 35px #FF0000;
+            text-align: center;
+            line-height: 1.2;
+            background-color: rgba(0, 0, 0, 0.7); /* Semi-transparent background */
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #FF0000;
+        }
+
+        #finalScore {
+            font-size: 32px;
+            color: #FFFF00;
+            margin-top: 15px;
+            text-shadow: 0 0 10px #FFFF00;
+        }
+
+        #restartButton {
+            margin-top: 30px; /* More space */
+            padding: 12px 25px; /* Larger button */
+            font-size: 24px; /* Larger text */
+            background-color: #00FFFF;
+            color: #090A0F;
+            border: none;
+            border-radius: 8px; /* More rounded */
+            cursor: pointer;
+            box-shadow: 0 0 15px #00FFFF, 0 0 25px rgba(0, 255, 255, 0.5);
+            transition: background-color 0.2s, transform 0.2s;
+        }
+
+        #restartButton:hover {
+            background-color: #00e0e0;
+            transform: scale(1.05); /* Slight hover effect */
+        }
+
+        #restartButton:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body>
+    <div id="gameArea">
+        <div id="stars"></div>
+        <div id="player"></div>
+        <div id="score">Score: 0</div>
+        <div id="level">Level: 1</div>
+        <div id="gameOver">
+            GAME OVER!<br>
+            <div id="finalScore"></div>
+            <button id="restartButton">RESTART</button>
+        </div>
+    </div>
+    <div id="ashwinName"> made by - Ashwin_coding</div>
+<div id="ashwinTag">💓= S8W5T1</div>
+
+    <script>
+        const gameArea = document.getElementById('gameArea');
+        const starsContainer = document.getElementById('stars');
+        const player = document.getElementById('player');
+        const scoreDisplay = document.getElementById('score');
+        const levelDisplay = document.getElementById('level');
+        const gameOverDisplay = document.getElementById('gameOver');
+        const finalScoreDisplay = document.getElementById('finalScore');
+        const restartButton = document.getElementById('restartButton');
+
+        // Game parameters
+        let score = 0;
+        let level = 1;
+        let gameOver = false;
+        let playerX = 175;
+        let bullets = [];
+        let enemies = [];
+        let gameActive = true; // To control game loop while paused/restarting
+
+        // Base speeds - these will multiply with level
+        const BASE_BULLET_SPEED = 20; // Fast bullets
+        const BASE_ENEMY_SPEED = 3;  // Initial enemy speed
+        const BASE_ENEMY_SPAWN_RATE = 800; // Initial spawn rate (ms)
+
+        const MIN_ENEMY_SPAWN_RATE = 100; // Hard cap on spawn rate
+        const MAX_ENEMY_SPEED = 12; // Hard cap on enemy speed
+
+        let currentBulletSpeed = BASE_BULLET_SPEED;
+        let currentEnemySpeed = BASE_ENEMY_SPEED;
+        let currentEnemySpawnRate = BASE_ENEMY_SPAWN_RATE;
+
+        let lastEnemySpawn = 0;
+
+        // --- Visual & Game Feel Enhancements ---
+
+        // Star generation (more stars, slightly different movement)
+        for (let i = 0; i < 200; i++) { // Even more stars!
+            const star = document.createElement('div');
+            star.className = 'star';
+            star.style.width = `${Math.random() * 3}px`;
+            star.style.height = star.style.width;
+            star.style.left = `${Math.random() * 100}%`;
+            star.style.top = `${Math.random() * 100}%`;
+            star.style.setProperty('--duration', `${0.8 + Math.random() * 1.5}s`); // Faster twinkling
+            starsContainer.appendChild(star);
+        }
+
+        function createExplosion(x, y) {
+            const explosion = document.createElement('div');
+            explosion.className = 'explosion';
+            explosion.style.left = `${x - 25}px`; // Center explosion
+            explosion.style.top = `${y - 25}px`;
+            gameArea.appendChild(explosion);
+
+            // Remove explosion after animation
+            explosion.addEventListener('animationend', () => {
+                explosion.remove();
+            });
+        }
+
+        // --- Game Logic ---
+
+        function initializeGame() {
+            score = 0;
+            level = 1;
+            gameOver = false;
+            playerX = 175;
+            bullets = [];
+            enemies = [];
+            currentBulletSpeed = BASE_BULLET_SPEED;
+            currentEnemySpeed = BASE_ENEMY_SPEED;
+            currentEnemySpawnRate = BASE_ENEMY_SPAWN_RATE;
+            lastEnemySpawn = 0;
+
+            scoreDisplay.textContent = `Score: ${score}`;
+            levelDisplay.textContent = `Level: ${level}`;
+            gameOverDisplay.style.display = 'none';
+            player.style.left = playerX + 'px';
+
+            // Clear all existing enemies, bullets, and explosions
+            Array.from(gameArea.children).forEach(child => {
+                if (child.classList.contains('enemy') || child.classList.contains('bullet') || child.classList.contains('explosion')) {
+                    child.remove();
+                }
+            });
+
+            gameActive = true;
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Player movement
+        gameArea.addEventListener('mousemove', (e) => {
+            if (!gameOver && gameActive) {
+                const rect = gameArea.getBoundingClientRect();
+                playerX = Math.max(0, Math.min(e.clientX - rect.left - player.offsetWidth / 2, gameArea.offsetWidth - player.offsetWidth));
+                player.style.left = playerX + 'px';
+            }
+        });
+
+        // Shooting
+        gameArea.addEventListener('click', () => {
+            if (!gameOver && gameActive) {
+                const bullet = document.createElement('div');
+                bullet.className = 'bullet';
+                bullet.style.left = (playerX + player.offsetWidth / 2 - bullet.offsetWidth / 2) + 'px'; // Center bullet
+                bullet.style.bottom = '70px';
+                gameArea.appendChild(bullet);
+                bullets.push(bullet);
+            }
+        });
+
+        // Game Loop
+        function gameLoop(timestamp) {
+            if (!gameActive) return;
+
+            // Difficulty scaling
+            if (score >= level * 100) { // Increase level every 100 points
+                level++;
+                levelDisplay.textContent = `Level: ${level}`;
+                currentEnemySpeed = Math.min(MAX_ENEMY_SPEED, BASE_ENEMY_SPEED + (level - 1) * 0.5); // Enemies get faster
+                currentEnemySpawnRate = Math.max(MIN_ENEMY_SPAWN_RATE, BASE_ENEMY_SPAWN_RATE - (level - 1) * 50); // Enemies spawn faster
+            }
+
+            // Spawn enemies
+            if (timestamp - lastEnemySpawn > currentEnemySpawnRate) {
+                spawnEnemy();
+                lastEnemySpawn = timestamp;
+            }
+
+            // Update bullets
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                const bullet = bullets[i];
+                let currentBottom = parseFloat(bullet.style.bottom);
+                currentBottom += currentBulletSpeed; // Use dynamic bullet speed
+                bullet.style.bottom = currentBottom + 'px';
+
+                if (currentBottom > gameArea.offsetHeight) {
+                    bullet.remove();
+                    bullets.splice(i, 1);
+                }
+            }
+
+            // Update enemies and check collisions
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                const enemy = enemies[i];
+                let currentTop = parseFloat(enemy.style.top);
+                currentTop += currentEnemySpeed; // Use dynamic enemy speed
+                enemy.style.top = currentTop + 'px';
+
+                const enemyRect = enemy.getBoundingClientRect();
+                const playerRect = player.getBoundingClientRect();
+
+                // Collision with player
+                if (
+                    playerRect.left < enemyRect.right &&
+                    playerRect.right > enemyRect.left &&
+                    playerRect.top < enemyRect.bottom &&
+                    playerRect.bottom > enemyRect.top
+                ) {
+                    endGame();
+                    return;
+                }
+
+                // Collision with bullets
+                for (let j = bullets.length - 1; j >= 0; j--) {
+                    const bullet = bullets[j];
+                    const bulletRect = bullet.getBoundingClientRect();
+
+                    if (
+                        bulletRect.left < enemyRect.right &&
+                        bulletRect.right > enemyRect.left &&
+                        bulletRect.top < enemyRect.bottom &&
+                        bulletRect.bottom > enemyRect.top
+                    ) {
+                        // Create explosion at enemy's position
+                        createExplosion(enemyRect.left + enemyRect.width / 2, enemyRect.top + enemyRect.height / 2);
+
+                        enemy.remove();
+                        bullet.remove();
+                        enemies.splice(i, 1);
+                        bullets.splice(j, 1);
+                        score += 10;
+                        scoreDisplay.textContent = `Score: ${score}`;
+                        break;
+                    }
+                }
+
+                // Remove enemies that go off screen
+                if (currentTop > gameArea.offsetHeight) {
+                    enemy.remove();
+                    enemies.splice(i, 1);
+                }
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        function spawnEnemy() {
+            const enemy = document.createElement('div');
+            enemy.className = 'enemy';
+            enemy.style.left = Math.random() * (gameArea.offsetWidth - enemy.offsetWidth) + 'px';
+            enemy.style.top = '-40px';
+            gameArea.appendChild(enemy);
+            enemies.push(enemy);
+        }
+
+        function endGame() {
+            gameOver = true;
+            gameActive = false;
+            finalScoreDisplay.textContent = `Your Score: ${score}`;
+            gameOverDisplay.style.display = 'block';
+        }
+
+        restartButton.addEventListener('click', () => {
+            initializeGame();
+        });
+
+        // Start the game for the first time
+        initializeGame();
+    </script>
+</body>
+</html>
